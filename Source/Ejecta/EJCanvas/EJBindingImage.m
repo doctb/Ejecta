@@ -6,6 +6,8 @@
 @implementation EJBindingImage
 @synthesize texture;
 
+static NSString *documentsDirectory;
+
 - (void)beginLoad {
 	// This will begin loading the texture in a background thread and will call the
 	// JavaScript onload callback when done
@@ -14,6 +16,12 @@
 	// Protect this image object from garbage collection, as its callback function
 	// may be the only thing holding on to it
 	JSValueProtect(scriptView.jsGlobalContext, jsObject);
+	
+	// Retrieve and store the User Documents path the first time an image is loaded
+	if( !documentsDirectory ) {
+		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+		documentsDirectory = [[paths objectAtIndex:0] copy]; // retain until the app close
+	}
 	
 	NSString *fullPath;
 
@@ -24,6 +32,10 @@
 	}
 	else if( [path hasPrefix:@"http:"] || [path hasPrefix:@"https:"] ) {
 		NSLog(@"Loading Image from URL: %@", path);
+		fullPath = path;
+	}
+	else if( [path hasPrefix:documentsDirectory] ) {
+		NSLog(@"Loading Image from User Documents: %@", path);
 		fullPath = path;
 	}
 	else {
